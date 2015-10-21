@@ -9,15 +9,24 @@ last updated 21/10/15
 
 - 21/10/15:
 updated model wavelength gird from:
+
 lscale1= np.loadtxt(plscale1)[:,0][200:-150]#4717.0471-4886.7621
+
 lscale2= np.loadtxt(plscale2)[:,0][50:-150]#5651.2565- 5864.2118
+
 lscale3= np.loadtxt(plscale3)[:,0][20:-150] #6483.1451-6729.374 
+
 lscale4= np.loadtxt(plscale4)[:,0][50:-150]#7710.6577-7880.5470
+
 to:
 lscale1= np.loadtxt(plscale1)[:,0][354:3709]#4724.026-4876.022
+
 lscale2= np.loadtxt(plscale2)[:,0][284:3723]#5564.05-5852.02
+
 lscale3= np.loadtxt(plscale3)[:,0][337:3737] #6503.032-6716.26 
+
 lscale4= np.loadtxt(plscale4)[:,0][50:-150]#7710.6577-7880.5470
+
 (ambre4.5new.p)
 
 - 17/10/15: 
