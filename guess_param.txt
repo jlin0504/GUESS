@@ -1,0 +1,28 @@
+#night, rv output, shifted and normalised spectra saving location, param output
+150606
+/priv/mulga1/jlin/test.txt
+/priv/mulga1/jlin/test/
+/priv/mulga1/jlin/testparams.txt
+#rv grids:
+grids/rv_grid_1.txt
+grids/rv_grid_2.txt
+grids/rv_grid_3.txt
+#model grid for RV
+models/rv_models_1.fits
+models/rv_models_2.fits
+models/rv_models_3.fits
+#wavelength grid for param
+grids/grid1.spec1
+grids/grid2.spec2
+grids/grid3.spec3
+grids/grid4.spec4
+#ctm regions
+grids/hermes_continuum_131216.dat
+#model grid for param
+models/ambre4.5new.p
+#number of stars, use all to run all stars in the folder
+2
+#telluric region cut off, default: cropping all before 7707A for the 4th ccd
+7707
+#dir location
+/priv/mulga1/jlin/janesample
