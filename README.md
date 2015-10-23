@@ -1,9 +1,8 @@
--------------------------------------------
 GALAH ULTRA ENIGMATIC SPECTROSCOPIC SCRIPT
 
 Jane Lin 
+
 u5027368@anu.edu.au
--------------------------------------------
 
 A glorified random number generator for getting RV, parameter estimates, RV corrected & normalised spectra for 2dfdr reduced GALAH data
 
