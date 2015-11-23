@@ -26,7 +26,7 @@ import heapq
 import matplotlib.pyplot as plt
 from numpy.linalg import lstsq
 import pickle
-import os
+import os, sys
 
 guess_params=[]
 for line in open("guess_param.txt"):
@@ -121,13 +121,24 @@ def clean(filename):
     if len(nans2)!=0:
         d[nans2]=np.mean(d[np.where(np.isnan(d)==False)])
     #median filter smoothing and calculating s/n
+      
     signal = np.median(d)
     noise = 1.4826/np.sqrt(2)*np.median(np.abs(d[1:] - d[:-1]))
     snr = signal / noise
     med_d = sig.medfilt(d,5) #5 pixels window
     w = np.where(abs(med_d - d) > sigma * noise)[0]
     d[w]=med_d[w] 
-    sn=True    
+    sn=True
+
+    if filename.split('.')[0].endswith('4'):
+        grid=wave3 #dummy, to be consistent with the function output format.
+        #exclude O2 absorption when measuring SNR 
+        non_tel=np.where(wave>=7680)[0]
+        fl=d[non_tel]
+        signal = np.median(fl)
+        noise = 1.4826/np.sqrt(2)*np.median(np.abs(fl[1:] - fl[:-1]))
+        snr = signal / noise
+    
     print 'S/N is ' + str(snr)
     if snr <3:
         sn=False
@@ -135,7 +146,7 @@ def clean(filename):
     grid_min=min(grid, key=lambda x:abs(x-wave[0]))
     grid_max=min(grid, key=lambda x:abs(x-wave[-1]))
     grid=grid[np.where(grid==grid_min)[0][0]:np.where(grid==grid_max)[0][0]]
-    flux=np.interp(grid,wave,d) 
+    flux=np.interp(grid,wave,d)
     return flux,grid,sn,snr,d,wave
 
 #to find the subpixel, fitting the correlation peaks
@@ -228,10 +239,12 @@ def run_rv (filename,folder):
     snr1=clean('%s/%s/combined/%s%s.fits'%(dir_str,folder,starno,'1'))[-3]#folder,date,ccd,galahic
     snr2=clean('%s/%s/combined/%s%s.fits'%(dir_str,folder,starno,'2'))[-3]#folder,date,ccd,galahic
     snr3=clean('%s/%s/combined/%s%s.fits'%(dir_str,folder,starno,'3'))[-3]#folder,date,ccd,galahic
+    snr4=clean('%s/%s/combined/%s%s.fits'%(dir_str,folder,starno,'4'))[-3]
 
     snrs.append(snr1)
     snrs.append(snr2)
     snrs.append(snr3)
+    snrs.append(snr4)
 
     if snr1<3:
         print 'yooo dwag sn are looowwwwww'
@@ -241,6 +254,7 @@ def run_rv (filename,folder):
         filename='%s/%s/combined/%s%s.fits'%(dir_str,folder,starno,i)
         flux,grid,sn,snr,a,b = clean(filename)        
         snrs.append(snr)
+            
         if i =='1':
             wavee=wave1
             mm=m1
@@ -326,8 +340,8 @@ else:
 
 #donotwant=glob.glob('/priv/miner3/galah/testsample_05282015/%s/%s*'%(folder,folder.split('/')[-1]))
 f=open(saveloc,'w') #change store location
-f.write('{0:<25} {1:<10} {2:<10} {3:<10} {4:<10} {5:<10} {6:<10} {7:<10} {8:<10} {9:<10} {10:<10}\n' .\
-format('ccd1_filename','v_ccd1','v_ccd2','v_ccd3','v_final','v_sigma', 's/n_ccd1', 's/n_ccd2','s/n_ccd3', 'sn_low', 'bad_weights'))
+f.write('{0:<25} {1:<10} {2:<10} {3:<10} {4:<10} {5:<10} {6:<10} {7:<10} {8:<10} {9:<10} {10:<10} {11:<10}\n' .\
+format('ccd1_filename','v_ccd1','v_ccd2','v_ccd3','v_final','v_sigma', 's/n_ccd1', 's/n_ccd2','s/n_ccd3', 's/n_ccd4','sn_low', 'bad_weights'))
 
 
 for i in files:
@@ -338,24 +352,24 @@ for i in files:
     
     star_id=i.split('/')[-1].split('.')[0]
     if rv[2]==1:#snr low
-        f.write('{0:<25} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10} {10:<10}\n'.\
-    format(star_id,999,999,999,999,999,rv[1][0],rv[1][1],rv[1][2],1,0))
+        f.write('{0:<25} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10.1f} {10:<10} {11:<10}\n'.\
+    format(star_id,999,999,999,999,999,rv[1][0],rv[1][1],rv[1][2],rv[1][3],1,0))
         continue
     if rv[3]==1:
-        f.write('{0:<25} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10} {10:<10}\n'.\
-    format(star_id,999,999,999,999,999,rv[1][0],rv[1][1],rv[1][2],0,1))
+        f.write('{0:<25} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10.1f} {10:<10} {11:<10}\n'.\
+    format(star_id,999,999,999,999,999,rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,1))
         continue
       #bad_weights
     if rv[0][1]==999 and rv[2]==0 and rv[3]==0:
         good_star=sorting1(rv[0])
-        f.write('{0:<25} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10} {10:<10}\n'.\
+        f.write('{0:<25} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10.1f} {10:<10} {11:<10}\n'.\
     format(star_id,good_star[0][0][0],good_star[0][0][1],good_star[0][0][2],\
-    good_star[0][2],np.std([good_star[0][0][0],good_star[0][0][-1]]),rv[1][0],rv[1][1],rv[1][2],0,0))
+    good_star[0][2],np.std([good_star[0][0][0],good_star[0][0][-1]]),rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,0))
     else:
         good_star=sorting1(rv[0])
-        f.write('{0:<25} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10} {10:<10}\n'.\
+        f.write('{0:<25} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10.1f} {10:<10} {11:<10}\n'.\
     format(star_id,good_star[0][0][0],good_star[0][0][1],good_star[0][0][2],\
-    good_star[0][2],np.std(good_star[0][0]),rv[1][0],rv[1][1],rv[1][2],0,0))
+    good_star[0][2],np.std(good_star[0][0]),rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,0))
     
 f.close() 
 
@@ -435,15 +449,16 @@ v_sig=np.array([float(i) for i in stars[:,5]])
 sn1=np.array([float(i) for i in stars[:,6]])
 sn2=np.array([float(i) for i in stars[:,7]])
 sn3=np.array([float(i) for i in stars[:,8]])
-sn_low=np.array([int(i) for i in stars[:,9]])
-bad_weights=np.array([int(i) for i in stars[:,10]])
+sn4=np.array([float(i) for i in stars[:,9]])
+sn_low=np.array([int(i) for i in stars[:,10]])
+bad_weights=np.array([int(i) for i in stars[:,11]])
 
 hermes_ctm=np.loadtxt(continuum_reg)
 
 #uncomment this for output file
 f=open(param_output,'w')
-f.write('{0:<18} {1:<10} {2:<10} {3:<10} {4:<10} {5:<10} {6:<10} {7:<10} {8:<10} {9:<10} {10:<10} {11:<10} {12:<10} {13:<10} {14:<10} {15:<10} \n' .\
-format('ccd1_filename','v_ccd1','v_ccd2','v_ccd3','v_final','v_sigma','s/n_ccd1', 's/n_ccd2','s/n_ccd3','sn_low','bad_weights','ctm','teff','logg','feh','out'))
+f.write('{0:<18} {1:<10} {2:<10} {3:<10} {4:<10} {5:<10} {6:<10} {7:<10} {8:<10} {9:<10} {10:<10} {11:<10} {12:<10} {13:<10} {14:<10} {15:<10} {16:<10}\n' .\
+format('ccd1_filename','v_ccd1','v_ccd2','v_ccd3','v_final','v_sigma','s/n_ccd1', 's/n_ccd2','s/n_ccd3','s/n_ccd4','sn_low','bad_weights','ctm','teff','logg','feh','out'))
 
 
 datas=[]#contains ctm normalized data
@@ -662,7 +677,7 @@ dd[np.where(param_array[:,2]>1)]=1
 
 #uncomment this for output file
 for i in range(len(ctm)):
-   f.write('{0:<18} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10} {10:<10} {11:<10} {12:<10.1f} {13:<10.3f} {14:<10.3f} {15:<10}\n'.\
-   format(star_no[i],v1[i],v2[i],v3[i],vf[i],v_sig[i],sn1[i],sn2[i],sn3[i],sn_low[i],\
+   f.write('{0:<18} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10} {10:<10} {11:<10} {12:<10.1f} {13:<10.3f} {14:<10.3f} {15:<10} {16:<10}\n'.\
+   format(star_no[i],v1[i],v2[i],v3[i],vf[i],v_sig[i],sn1[i],sn2[i],sn3[i],sn4[i],sn_low[i],\
    bad_weights[i],ctm[i],param_array[:,0][i],param_array[:,1][i],param_array[:,2][i],dd[i][0]))
 f.close()
