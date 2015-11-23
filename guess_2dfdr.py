@@ -133,14 +133,14 @@ def clean(filename):
     if filename.split('.')[0].endswith('4'):
         grid=wave3 #dummy, to be consistent with the function output format.
         #exclude O2 absorption when measuring SNR 
-        non_tel=np.where(wave>=7680)[0]
+        non_tel=np.where(wave>=telluric_region)[0]
         fl=d[non_tel]
         signal = np.median(fl)
         noise = 1.4826/np.sqrt(2)*np.median(np.abs(fl[1:] - fl[:-1]))
         snr = signal / noise
     
     print 'S/N is ' + str(snr)
-    if snr <3:
+    if snr <3 and filename.split('.')[0].endswith('4')==False :
         sn=False
         sn_low.append(starno)
     grid_min=min(grid, key=lambda x:abs(x-wave[0]))
