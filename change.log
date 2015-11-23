@@ -20,3 +20,5 @@ lscale4= np.loadtxt(plscale4)[:,0][50:-150]#7710.6577-7880.5470
  added in warning for stars outside the model grid 
 added new dir location in the guess_param.txt
 
+20/11/2015
+GUESS now outputs SNR for the HERMES' 4th CCD. 
