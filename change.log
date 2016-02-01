@@ -1,6 +1,29 @@
 --------------------------------------CHANGE LOG---------------------------------------
+01/02/2016 
+Ly Duong
+- continuum fitting changed to:
+ + quadratic spline for B band
+ + quintic spline for IR band
+ + continuum points are now much more smoothed out in all arms, which should stop the routine 
+   from trying to fit local continuum variations.
+
+- updated model wavelength grid from 
+ + lscale4= np.loadtxt(plscale4)[:,0][50:-150]#7710.6577-7880.5470
+   to
+   lscale4= np.loadtxt(plscale4)[:,0][202:-80]#7694-7880.5
+   (change not significant for RV & parameters determination)
+ + new file: grid4.spec4  
+
+- telluric_region changed from 7707A to 7694A to capture K7699. 
+
+- continuum regions changed:
+ + 2 new regions at the start of G band
+ + removed end regions in IR arms that did not contain data & skewed the fit
+ + new file: hermes_continuum_160201.dat
+
 23/11/15
-4th CCD SNR added in by Ly
+Ly Duong
+4th CCD SNR added
 
 23/10/15
 migrated to git
@@ -23,5 +46,3 @@ lscale4= np.loadtxt(plscale4)[:,0][50:-150]#7710.6577-7880.5470
  added in warning for stars outside the model grid 
 added new dir location in the guess_param.txt
 
-20/11/2015
-GUESS now outputs SNR for the HERMES' 4th CCD. 
