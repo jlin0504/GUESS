@@ -17,12 +17,12 @@ grids/grid2.spec2
 grids/grid3.spec3
 grids/grid4.spec4
 #ctm regions
-grids/hermes_continuum_131216.dat
+grids/hermes_continuum_160201.dat
 #model grid for param
 models/ambre4.5new.p
 #number of stars, use all to run all stars in the folder
 2
-#telluric region cut off, default: cropping all before 7707A for the 4th ccd
-7707
+#telluric region cut off, default: cropping all before 7694A for the 4th ccd
+7694
 #dir location
 /priv/mulga1/jlin/janesample
