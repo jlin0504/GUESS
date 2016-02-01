@@ -435,7 +435,7 @@ rv_corrected=folderloc
 lscale1= np.loadtxt(plscale1)[:,0][354:3709]#4724.026-4876.022
 lscale2= np.loadtxt(plscale2)[:,0][284:3723]#5564.05-5852.02
 lscale3= np.loadtxt(plscale3)[:,0][337:3737] #6503.032-6716.26 
-lscale4= np.loadtxt(plscale4)[:,0][50:-150]#7710.6577-7880.5470
+lscale4= np.loadtxt(plscale4)[:,0][202:-80]#7694 -7880.5
 
 lscale_all=np.hstack([lscale1,lscale2,lscale3])
 
@@ -479,16 +479,20 @@ for i in star_no:
        fname=rv_corrected+date+j+'.txt'
        if fname.split('.')[-2].endswith('1'):
            lscale= lscale1
-           sf=1e6
+           sf=1e12
+           k=2
        if fname.split('.')[-2].endswith('2'):
            lscale= lscale2
-           sf=1e6
+           sf=1e12
+           k=3
        if fname.split('.')[-2].endswith('3'):
            lscale= lscale3
-           sf=1e8
+           sf=1e12
+           k=3
        if fname.split('.')[-2].endswith('4'):
            lscale= lscale4
-           sf=1e9
+           sf=1e15
+           k=5
        data1=np.loadtxt(fname,delimiter=',')
        flux=data1[:,1]
        raw_wave=data1[:,0]
@@ -504,13 +508,13 @@ for i in star_no:
              if raw_wave[ss]< kk[1] and raw_wave[ss]> kk[0]:
                  fit_y.append(flux[ss])
                  fit_x.append(raw_wave[ss])
-       s = UnivariateSpline(fit_x, fit_y, s=sf)
+       s = UnivariateSpline(fit_x, fit_y, s=sf,k=k)
        flux_raw_norm=flux/s(raw_wave)
        flux_int=np.interp(lscale,raw_wave,flux)
        flux_norm=flux_int/s(lscale)
 
        if j=='2' and len(np.where(flux_norm>1.6)[0])>5:
-                   s = UnivariateSpline(fit_x, fit_y, s=1e7)
+                   s = UnivariateSpline(fit_x, fit_y, s=1e12)
                    flux_int=np.interp(lscale,raw_wave,flux)
                    flux_norm=flux_int/s(lscale)
                    flux_raw_norm=flux/s(raw_wave)
