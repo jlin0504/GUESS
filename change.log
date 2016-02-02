@@ -1,4 +1,8 @@
 --------------------------------------CHANGE LOG---------------------------------------
+02/02/2016
+Ly Duong
+- Rejecting large streaks/cosmic rays residuals.
+
 01/02/2016 
 Ly Duong
 - continuum fitting changed to:
