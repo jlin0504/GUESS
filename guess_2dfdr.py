@@ -508,6 +508,11 @@ for i in star_no:
              if raw_wave[ss]< kk[1] and raw_wave[ss]> kk[0]:
                  fit_y.append(flux[ss])
                  fit_x.append(raw_wave[ss])
+       good_cont=np.where(np.absolute(fit_y)<=np.absolute(np.median(fit_y))*1.3)[0]
+       fit_y=np.asfarray(fit_y)
+       fit_x=np.asfarray(fit_x)
+       fit_y=fit_y[good_cont]
+       fit_x=fit_x[good_cont]
        s = UnivariateSpline(fit_x, fit_y, s=sf,k=k)
        flux_raw_norm=flux/s(raw_wave)
        flux_int=np.interp(lscale,raw_wave,flux)
