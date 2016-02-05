@@ -1,5 +1,5 @@
 import os
 
 print 'getting model grid (large!)'
-os.system('wget https://www.dropbox.com/s/zy4d7k0fmwbbi4e/ambre4.5new.p')
+os.system('wget https://www.mso.anu.edu.au/~jlin/archive/ambre4.5new.p --no-check-certificate')
 print 'done'
