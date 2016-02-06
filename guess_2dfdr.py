@@ -90,11 +90,11 @@ def clean(filename):
     5. original wl grid, without nans                 
     '''
     
-    if filename.split('.')[0].endswith('1'):
+    if filename.split('.')[-2].endswith('1'):
         grid=wave1
-    if filename.split('.')[0].endswith('2'):
+    if filename.split('.')[-2].endswith('2'):
         grid=wave2
-    if filename.split('.')[0].endswith('3'):
+    if filename.split('.')[-2].endswith('3'):
         grid=wave3
     
     #starno=filename.split('_')[-1].split('.')[0]#galahic
@@ -130,7 +130,7 @@ def clean(filename):
     d[w]=med_d[w] 
     sn=True
 
-    if filename.split('.')[0].endswith('4'):
+    if filename.split('.')[-2].endswith('4'):
         grid=wave3 #dummy, to be consistent with the function output format.
         #exclude O2 absorption when measuring SNR 
         non_tel=np.where(wave>=telluric_region)[0]
@@ -140,7 +140,7 @@ def clean(filename):
         snr = signal / noise
     
     print 'S/N is ' + str(snr)
-    if snr <3 and filename.split('.')[0].endswith('4')==False :
+    if snr <3 and filename.split('.')[-2].endswith('4')==False :
         sn=False
         sn_low.append(starno)
     grid_min=min(grid, key=lambda x:abs(x-wave[0]))
@@ -169,11 +169,11 @@ def find_rv (model_ctm,flux,wave,filename):
 
     flux -= np.mean(flux) #get rid of the top hat like thingy
     h=pyfits.getheader(filename)
-    if filename.split('.')[0].endswith('1'):
+    if filename.split('.')[-2].endswith('1'):
         cdelt1=wave1[1]-wave1[0]
-    if  filename.split('.')[0].endswith('2'):
+    if  filename.split('.')[-2].endswith('2'):
         cdelt1=wave2[1]-wave2[0]
-    if filename.split('.')[0].endswith('3'):
+    if filename.split('.')[-2].endswith('3'):
         cdelt1=wave3[1]-wave3[0]
  
     flux /= np.sqrt(np.sum(flux**2)) #normalise the flux
@@ -378,7 +378,7 @@ def find_nearest(array,value):
     return idx
 
 #For generating the rv shifted spectrum, median filtered and uninterpolated
-rvs=np.genfromtxt(saveloc, skiprows=1,usecols=[0,4],dtype='S')
+rvs=np.genfromtxt(saveloc, skip_header=1,usecols=[0,4],dtype='S')
 for i in rvs: #writes all the rv corrected spectra
     #date=i[0].split('_')[0][:-1]
     #galahic=i[0].split('_')[1]
@@ -439,7 +439,7 @@ lscale4= np.loadtxt(plscale4)[:,0][202:-80]#7694 -7880.5
 
 lscale_all=np.hstack([lscale1,lscale2,lscale3])
 
-stars=np.genfromtxt(rv_input, skiprows=1, dtype='S')
+stars=np.genfromtxt(rv_input, skip_header=1, dtype='S')
 star_no=stars[:,0]
 v1=np.array([float(i) for i in stars[:,1]])
 v2=np.array([float(i) for i in stars[:,2]])
