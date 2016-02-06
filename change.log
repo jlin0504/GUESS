@@ -1,4 +1,11 @@
 --------------------------------------CHANGE LOG---------------------------------------
+06/02/16
+Continuum regions are now fitted by ploynomials. Their orders can be specified in the parameter file. 
+AMBRE models now stored on Stromlo 
+new good_continuum
+np.genfromtxt updated to numpy 1.10
+fixed Parsing filenames #2
+
 02/02/2016
 Ly Duong
 - Rejecting large streaks/cosmic rays residuals.
