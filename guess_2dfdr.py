@@ -5,7 +5,7 @@ Enigmatic
 Spectroscopic
 Script
 
-last updated: 21-10-15
+last updated: 6-2-16
 
 @author: Jane Lin (u5027368@anu.edu.au)
 
@@ -55,6 +55,11 @@ plscale4=guess_params[13]
 
 continuum_reg=guess_params[14] 
 param_grid=guess_params[15] 
+
+fit_degree1=guess_params[19]
+fit_degree2=guess_params[20]
+fit_degree3=guess_params[21]
+fit_degree4=guess_params[22]
 
 #----------------------------------------------------------------------#
 
@@ -460,7 +465,6 @@ f=open(param_output,'w')
 f.write('{0:<18} {1:<10} {2:<10} {3:<10} {4:<10} {5:<10} {6:<10} {7:<10} {8:<10} {9:<10} {10:<10} {11:<10} {12:<10} {13:<10} {14:<10} {15:<10} {16:<10}\n' .\
 format('ccd1_filename','v_ccd1','v_ccd2','v_ccd3','v_final','v_sigma','s/n_ccd1', 's/n_ccd2','s/n_ccd3','s/n_ccd4','sn_low','bad_weights','ctm','teff','logg','feh','out'))
 
-
 datas=[]#contains ctm normalized data
 ctm=[]
 for i in star_no: 
@@ -479,20 +483,20 @@ for i in star_no:
        fname=rv_corrected+date+j+'.txt'
        if fname.split('.')[-2].endswith('1'):
            lscale= lscale1
-           sf=1e12
-           k=2
+           fit_degree=int(fit_degree1)
+
        if fname.split('.')[-2].endswith('2'):
            lscale= lscale2
-           sf=1e12
-           k=3
+           fit_degree=int(fit_degree2)
+  
        if fname.split('.')[-2].endswith('3'):
            lscale= lscale3
-           sf=1e12
-           k=3
+           fit_degree=int(fit_degree3)
+
        if fname.split('.')[-2].endswith('4'):
            lscale= lscale4
-           sf=1e15
-           k=5
+           fit_degree=int(fit_degree4)
+
        data1=np.loadtxt(fname,delimiter=',')
        flux=data1[:,1]
        raw_wave=data1[:,0]
@@ -508,29 +512,49 @@ for i in star_no:
              if raw_wave[ss]< kk[1] and raw_wave[ss]> kk[0]:
                  fit_y.append(flux[ss])
                  fit_x.append(raw_wave[ss])
-       good_cont=np.where(np.absolute(fit_y)<=np.absolute(np.median(fit_y))*1.3)[0]
+
+       good_cont=np.where(np.abs(fit_y-np.mean(flux))<=np.mean(flux)*0.5)
        fit_y=np.asfarray(fit_y)
        fit_x=np.asfarray(fit_x)
        fit_y=fit_y[good_cont]
        fit_x=fit_x[good_cont]
-       s = UnivariateSpline(fit_x, fit_y, s=sf,k=k)
-       flux_raw_norm=flux/s(raw_wave)
        flux_int=np.interp(lscale,raw_wave,flux)
-       flux_norm=flux_int/s(lscale)
 
-       if j=='2' and len(np.where(flux_norm>1.6)[0])>5:
-                   s = UnivariateSpline(fit_x, fit_y, s=1e12)
-                   flux_int=np.interp(lscale,raw_wave,flux)
-                   flux_norm=flux_int/s(lscale)
-                   flux_raw_norm=flux/s(raw_wave)
-
-
-       if np.isnan(flux_norm)[0] and  np.isnan(flux_norm)[-1] and \
-np.isnan(flux_norm)[1000]:
+       try:
+           fitt=np.polyfit(fit_x,fit_y,fit_degree) #fitting the ctm, 3rd degree polynomial
+       except:
            print 'fitting gone wrong!'
            bad=True
            break
+       if np.isnan(fitt).any():
+           print 'fitting gone wrong!'
+           bad=True
+           break
+       
+       fitt2=np.poly1d(fitt)
+       flux_raw_norm=flux/fitt2(raw_wave)
+       flux_norm=flux_int/fitt2(lscale)
+
+       # # ####plotting stuff####
+       # plt.clf()
+       # plt.subplot(3,1,1)
+       # plt.plot(raw_wave,flux)
+       # plt.plot(raw_wave,fitt2(raw_wave))
+       # plt.title('ccd'+j+' star:'+i)
+       # plt.scatter(fit_x,fit_y)
+       # plt.subplot(3,1,2)
+       # plt.title('fluc_raw_norm')
+       # plt.plot(raw_wave,flux_raw_norm)
+       # plt.subplot(3,1,3)
+       # plt.plot(lscale,flux_norm)
+       # plt.title('flux_norm')
+       # plt.tight_layout()
+       # #plt.show()
+       # plt.savefig('/scratch/midden/jlin/test/'+'ccd'+j+'star'+i)
+       # # #####################
+
        print len(flux_norm)
+
        if j!= '4':
        	   data.append(flux_norm)#each ccd is normalized individually
        	   if bad:

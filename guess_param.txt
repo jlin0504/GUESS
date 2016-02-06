@@ -1,8 +1,8 @@
 #night, rv output, shifted and normalised spectra saving location, param output
-150606
-/priv/mulga1/jlin/test.txt
-/priv/mulga1/jlin/test/
-/priv/mulga1/jlin/testparams.txt
+150427
+/scratch/midden/jlin/test/guess/test.txt
+/scratch/midden/jlin/test/guess/
+/scratch/midden/jlin/test/guess/testparams.txt
 #rv grids:
 grids/rv_grid_1.txt
 grids/rv_grid_2.txt
@@ -19,10 +19,15 @@ grids/grid4.spec4
 #ctm regions
 grids/hermes_continuum_160201.dat
 #model grid for param
-models/ambre4.5new.p
+/priv/mulga1/jlin/archive/ambre4.5new.p
 #number of stars, use all to run all stars in the folder
-2
+all
 #telluric region cut off, default: cropping all before 7694A for the 4th ccd
 7694
 #dir location
-/priv/mulga1/jlin/janesample
+/scratch/midden/jlin/test
+#n degrees of polynomial to fit the continuum, ccds 3&4 require higher level fits IMO
+3
+3
+4
+4
