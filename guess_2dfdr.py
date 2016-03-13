@@ -5,7 +5,7 @@ Enigmatic
 Spectroscopic
 Script
 
-last updated: 6-2-16
+last updated: 13-3-16
 
 @author: Jane Lin (u5027368@anu.edu.au)
 
@@ -270,12 +270,34 @@ def run_rv (filename,folder):
             h_e_index=np.where(grid==h_e)[0][0]
             s = UnivariateSpline(np.hstack([grid[:h_s_index],grid[h_e_index:]]), np.hstack([flux[:h_s_index],flux[h_e_index:]]), s=1e15) #s=smoothing factor
             flux_ctm=flux/s(grid)
+
+            # plt.clf()
+            # plt.subplot(2,1,1)
+            # plt.title('CCD'+i+' '+starno)
+            # plt.plot(grid,flux)
+            # plt.plot(grid,s(grid),c='r')
+            # plt.subplot(2,1,2)
+            # plt.plot(grid,flux_ctm)    
+            # plt.savefig('/priv/mulga1/jlin/ctm_test/rv/ccd1'+starno)
+            # plt.show()
+
         if i == '2':
             wavee=wave2
             mm=m2
             p0,p1,p2,p3,p4=leastsq(errfunc3,[0,0,0,0,0],args=(grid,flux))[0]
             fit=p0*grid**4+p1*grid**3+p2*grid**2+p3*grid+p4
-            flux_ctm=flux/fit            
+            flux_ctm=flux/fit#(grid)              
+
+            # plt.clf()
+            # plt.subplot(2,1,1)
+            # plt.title('CCD'+i+' '+starno)
+            # plt.plot(grid,flux)
+            # plt.plot(grid,fit,c='r')
+            # plt.subplot(2,1,2)
+            # plt.plot(grid,flux_ctm)    
+            # plt.savefig('/priv/mulga1/jlin/ctm_test/rv/ccd2'+starno)
+            # plt.show()
+          
         if i == '3':
             wavee=wave3
             mm=m3
@@ -285,6 +307,17 @@ def run_rv (filename,folder):
             h_e_index=np.where(grid==h_e)[0][0]
             s = UnivariateSpline(np.hstack([grid[:h_s_index],grid[h_e_index:]]), np.hstack([flux[:h_s_index],flux[h_e_index:]]), s=1e15)
             flux_ctm=flux/s(grid)
+
+            # plt.clf()
+            # plt.subplot(2,1,1)
+            # plt.title('CCD'+i+' '+starno)
+            # plt.plot(grid,flux)
+            # plt.plot(grid,s(grid),c='r')
+            # plt.subplot(2,1,2)
+            # plt.plot(grid,flux_ctm)    
+            # plt.savefig('/priv/mulga1/jlin/ctm_test/rv/ccd3'+starno)
+            # plt.show()
+
         model_s=np.where(wavee==grid[0])[0][0]
         model_e=np.where(wavee==grid[-1])[0][0]
         models=mm[0].data[:,model_s:model_e+1]
@@ -462,11 +495,12 @@ hermes_ctm=np.loadtxt(continuum_reg)
 
 #uncomment this for output file
 f=open(param_output,'w')
-f.write('{0:<18} {1:<10} {2:<10} {3:<10} {4:<10} {5:<10} {6:<10} {7:<10} {8:<10} {9:<10} {10:<10} {11:<10} {12:<10} {13:<10} {14:<10} {15:<10} {16:<10}\n' .\
-format('ccd1_filename','v_ccd1','v_ccd2','v_ccd3','v_final','v_sigma','s/n_ccd1', 's/n_ccd2','s/n_ccd3','s/n_ccd4','sn_low','bad_weights','ctm','teff','logg','feh','out'))
+f.write('{0:<18} {1:<10} {2:<10} {3:<10} {4:<10} {5:<10} {6:<10} {7:<10} {8:<10} {9:<10} {10:<10} {11:<10} {12:<10} {13:<10} {14:<10} {15:<10} {16:<10} {17:<10}\n' .\
+format('ccd1_filename','v_ccd1','v_ccd2','v_ccd3','v_final','v_sigma','s/n_ccd1', 's/n_ccd2','s/n_ccd3','s/n_ccd4','sn_low','bad_weights','ctm','teff','logg','feh','out','ctm_p'))
 
 datas=[]#contains ctm normalized data
 ctm=[]
+ctmf2=[] #flag for *potential* ctm problems
 for i in star_no: 
    index=np.where(star_no==i)[0][0]
    if int(vf[index])== 999:
@@ -474,10 +508,11 @@ for i in star_no:
        print 'bad rv, skipped'
        continue
    data=[]
-   #date,galahic=i.split('_')[0][:-1],i.split('_')[1]
    date=i[:-1]
    print i
    fluxintt=[]
+   potential_ctm=False
+
    for j in ['1','2','3','4']:
        bad=False
        fname=rv_corrected+date+j+'.txt'
@@ -488,13 +523,13 @@ for i in star_no:
        if fname.split('.')[-2].endswith('2'):
            lscale= lscale2
            fit_degree=int(fit_degree2)
-  
+
        if fname.split('.')[-2].endswith('3'):
            lscale= lscale3
            fit_degree=int(fit_degree3)
 
        if fname.split('.')[-2].endswith('4'):
-           lscale= lscale4
+           lscale= lscale4          
            fit_degree=int(fit_degree4)
 
        data1=np.loadtxt(fname,delimiter=',')
@@ -521,7 +556,7 @@ for i in star_no:
        flux_int=np.interp(lscale,raw_wave,flux)
 
        try:
-           fitt=np.polyfit(fit_x,fit_y,fit_degree) #fitting the ctm, 3rd degree polynomial
+           fitt=np.polyfit(fit_x,fit_y,fit_degree)
        except:
            print 'fitting gone wrong!'
            bad=True
@@ -534,26 +569,18 @@ for i in star_no:
        fitt2=np.poly1d(fitt)
        flux_raw_norm=flux/fitt2(raw_wave)
        flux_norm=flux_int/fitt2(lscale)
-
-       # # ####plotting stuff####
-       # plt.clf()
-       # plt.subplot(3,1,1)
-       # plt.plot(raw_wave,flux)
-       # plt.plot(raw_wave,fitt2(raw_wave))
-       # plt.title('ccd'+j+' star:'+i)
-       # plt.scatter(fit_x,fit_y)
-       # plt.subplot(3,1,2)
-       # plt.title('fluc_raw_norm')
-       # plt.plot(raw_wave,flux_raw_norm)
-       # plt.subplot(3,1,3)
-       # plt.plot(lscale,flux_norm)
-       # plt.title('flux_norm')
-       # plt.tight_layout()
-       # #plt.show()
-       # plt.savefig('/scratch/midden/jlin/test/'+'ccd'+j+'star'+i)
-       # # #####################
-
-       print len(flux_norm)
+       
+       outs=np.where(flux_raw_norm>1.05)[0]
+       if len(outs)>150 and j!='4':
+             potential_ctm=True
+             print 'possible continuum problem!'
+             print len(outs)
+             print j
+       if len(outs)>200 and j=='4':
+             potential_ctm=True
+             print 'possible continuum problem!'
+             print len(outs)
+             print j   
 
        if j!= '4':
        	   data.append(flux_norm)#each ccd is normalized individually
@@ -563,11 +590,17 @@ for i in star_no:
        with open(rv_corrected+date+j+'_n.txt', 'wb') as nom:
            writer = csv.writer(nom)
            writer.writerows(izip(raw_wave,flux_raw_norm))
+
    if bad:
        ctm.append(1)
        continue
+
    assert len(np.hstack([data[0],data[1],data[2]]))==10194
    datas.append(np.hstack([data[0],data[1],data[2]]))
+   if potential_ctm:
+       ctmf2.append(1)
+   if potential_ctm==False:
+       ctmf2.append(0)
    ctm.append(0)
 
 datas=np.array(datas)
@@ -710,7 +743,7 @@ dd[np.where(param_array[:,2]>1)]=1
 
 #uncomment this for output file
 for i in range(len(ctm)):
-   f.write('{0:<18} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10} {10:<10} {11:<10} {12:<10.1f} {13:<10.3f} {14:<10.3f} {15:<10} {16:<10}\n'.\
+   f.write('{0:<18} {1:<10.1f} {2:<10.1f} {3:<10.1f} {4:<10.1f} {5:<10.1f} {6:<10.1f} {7:<10.1f} {8:<10.1f} {9:<10} {10:<10} {11:<10} {12:<10.1f} {13:<10.3f} {14:<10.3f} {15:<10.3f} {16:<10} {17:<10}\n'.\
    format(star_no[i],v1[i],v2[i],v3[i],vf[i],v_sig[i],sn1[i],sn2[i],sn3[i],sn4[i],sn_low[i],\
-   bad_weights[i],ctm[i],param_array[:,0][i],param_array[:,1][i],param_array[:,2][i],dd[i][0]))
+   bad_weights[i],ctm[i],param_array[:,0][i],param_array[:,1][i],param_array[:,2][i],dd[i][0],ctmf2[i]))
 f.close()
