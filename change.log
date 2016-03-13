@@ -1,4 +1,9 @@
 --------------------------------------CHANGE LOG---------------------------------------
+13/02/16
+new flag 'ctm_p' (=1) for *potentially* problematic continuum  
+see issue flagging stars #3 for deets 
+back to polynomial fitting for parameters 
+
 06/02/16
 Continuum regions are now fitted by ploynomials. Their orders can be specified in the parameter file. 
 AMBRE models now stored on Stromlo 
