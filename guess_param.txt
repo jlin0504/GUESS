@@ -1,8 +1,8 @@
 #night, rv output, shifted and normalised spectra saving location, param output
-150427
+150703
 /scratch/midden/jlin/test/guess/test.txt
 /scratch/midden/jlin/test/guess/
-/scratch/midden/jlin/test/guess/testparams.txt
+/scratch/midden/jlin/testparams_new_140314
 #rv grids:
 grids/rv_grid_1.txt
 grids/rv_grid_2.txt
@@ -25,7 +25,7 @@ all
 #telluric region cut off, default: cropping all before 7694A for the 4th ccd
 7694
 #dir location
-/scratch/midden/jlin/test
+/scratch/midden/jlin
 #n degrees of polynomial to fit the continuum, ccds 3&4 require higher level fits IMO
 3
 3
