@@ -7,7 +7,7 @@ u5027368@anu.edu.au
 A glorified random number generator for getting RV, parameter estimates, RV corrected & normalised spectra for 2dfdr reduced GALAH data
 
 Quick Start Guide:
-- Run getmodels.py in models/ to download the model grid (alternatively, you can get it here https://www.dropbox.com/s/zy4d7k0fmwbbi4e/ambre4.5new.p)
+- Run getmodels.py in models/ to download the model grid (alternatively, you can get it here https://www.mso.anu.edu.au/~jlin/archive/ambre4.5new.p)
 - Edit the parameter file 'guess_param.txt' to specify where you want to keep everything
 - Run guess_2dfdr.py
 - ???????
