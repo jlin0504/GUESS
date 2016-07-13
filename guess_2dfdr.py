@@ -506,6 +506,7 @@ for i in star_no:
    if int(vf[index])== 999:
        ctm.append(1)
        print 'bad rv, skipped'
+       ctmf2.append(1)
        continue
    data=[]
    date=i[:-1]
