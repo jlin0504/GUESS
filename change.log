@@ -1,4 +1,7 @@
 --------------------------------------CHANGE LOG---------------------------------------
+13/07/16
+sneaky bug fix. 
+
 13/02/16
 new flag 'ctm_p' (=1) for *potentially* problematic continuum  
 see issue flagging stars #3 for deets 
