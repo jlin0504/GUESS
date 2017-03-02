@@ -1,4 +1,14 @@
 --------------------------------------CHANGE LOG---------------------------------------
+2/3/17
+Necromancer was here 
+Updated continuum fitting:
+1) removed ctm regions: 6736.1-6744.8103, 7779.3-7780, 7773.25-7773.75, 7885.7786-7886.0 A (updated hermes_continuum_160201.txt)
+2) sigma filtering to get rid of spikes, default values are: CCD1-4: 3, 2, 2.7, 2.4 (changeable from guess_param.txt)
+3) choices in different fitting functions: 'cheb' (chebyshev), 'poly' (polynomial), 'spline' (univariate spline). Default degrees are: CCD1-4: 3,4,9,7 (all cheb). Degrees changeable from guess_param.txt, but will need to go into the code to change the functions.
+Known issues:
+over-fitting of large spectral features (e.g., CCD3 of 150428000101007)
+(((iterative fitting coming soon(ish)????)))
+
 13/07/16
 sneaky bug fix. 
 
