@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 from numpy.linalg import lstsq
 import pickle
 import os, sys
+from scipy.stats import sigmaclip
 
 guess_params=[]
 for line in open("guess_param.txt"):
@@ -56,10 +57,10 @@ plscale4=guess_params[13]
 continuum_reg=guess_params[14] 
 param_grid=guess_params[15] 
 
-fit_degree1=guess_params[19]
-fit_degree2=guess_params[20]
-fit_degree3=guess_params[21]
-fit_degree4=guess_params[22]
+fit_degree1=int(guess_params[19])
+fit_degree2=int(guess_params[20])
+fit_degree3=int(guess_params[21])
+fit_degree4=int(guess_params[22])
 
 #----------------------------------------------------------------------#
 
@@ -415,6 +416,7 @@ def find_nearest(array,value):
     idx = (np.abs(array-value)).argmin()
     return idx
 
+
 #For generating the rv shifted spectrum, median filtered and uninterpolated
 rvs=np.genfromtxt(saveloc, skip_header=1,usecols=[0,4],dtype='S')
 for i in rvs: #writes all the rv corrected spectra
@@ -498,6 +500,82 @@ f=open(param_output,'w')
 f.write('{0:<18} {1:<10} {2:<10} {3:<10} {4:<10} {5:<10} {6:<10} {7:<10} {8:<10} {9:<10} {10:<10} {11:<10} {12:<10} {13:<10} {14:<10} {15:<10} {16:<10} {17:<10}\n' .\
 format('ccd1_filename','v_ccd1','v_ccd2','v_ccd3','v_final','v_sigma','s/n_ccd1', 's/n_ccd2','s/n_ccd3','s/n_ccd4','sn_low','bad_weights','ctm','teff','logg','feh','out','ctm_p'))
 
+
+def fit(cont_x,cont_y,x,y,deg,sigma_clip,ccd=1,fit_type='poly'): #poly,spline 
+       dummy,low,upp=sigmaclip(cont_y,sigma_clip,sigma_clip)
+       good_cont=np.where( (cont_y>low) & (cont_y<upp)) #sigma clip
+       if (len(cont_y)-len(good_cont[0]))   < (0.05*len(cont_y)): #if the number of rejected continuum regions is smaller than 5% of total regions, then the clip is ok 
+              print    'rejected regions: {:} ({:.2f}% of total number of regions)'.format(len(cont_y)-len(good_cont[0]),100*float(len(cont_y)-len(good_cont[0]))/len(cont_y))
+              pass
+
+       cont_y=np.array(cont_y)
+       cont_x=np.array(cont_x)
+       cont_y_good=cont_y[good_cont]
+       cont_x_good=cont_x[good_cont]
+
+       if ccd==4:
+              fake_region=y[int(len(y)*0.97):]   
+              dummy,low4,upp4=sigmaclip(fake_region,2,2)
+              fake_region=fake_region[np.where( (fake_region>low4) & (fake_region<upp4))[0]]
+              fake_cont_y=np.percentile(fake_region,97)
+              fake_cont_x=x[-1]
+              cont_x_good=np.append(cont_x_good,[fake_cont_x]*3)
+              cont_y_good=np.append(cont_y_good,[fake_cont_y]*3)
+              
+              
+              fake_region=y[:int(len(y)*0.03)]  
+              dummy,low4,upp4=sigmaclip(fake_region,2,2)
+              fake_region=fake_region[np.where( (fake_region>low4) & (fake_region<upp4))[0]] 
+              fake_cont_y=np.percentile(fake_region,97)
+              fake_cont_x=x[0]
+              cont_x_good=np.append(cont_x_good,[fake_cont_x]*3)
+              cont_y_good=np.append(cont_y_good,[fake_cont_y]*3)
+
+       if ccd==3:
+              fake_region=y[int(len(y)*0.99):]
+              #fake_region=y[-10:]
+              dummy,low3,upp3=sigmaclip(fake_region,3,3)
+              fake_region=fake_region[np.where( (fake_region>low3) & (fake_region<upp3))[0]] 
+              fake_cont_y=np.percentile(fake_region,90)
+              fake_cont_x=x[-1]
+              cont_x_good=np.append(cont_x_good,[fake_cont_x]*1)
+              cont_y_good=np.append(cont_y_good,[fake_cont_y]*1)
+
+              fake_region=y[:int(len(y)*0.03)]  
+              dummy,low3,upp3=sigmaclip(fake_region,2,2)
+              fake_region=fake_region[np.where( (fake_region>low3) & (fake_region<upp3))[0]] 
+              fake_cont_y=np.percentile(fake_region,90)
+              fake_cont_x=x[0]
+              cont_x_good=np.append(cont_x_good,[fake_cont_x]*3)
+              cont_y_good=np.append(cont_y_good,[fake_cont_y]*3)
+
+       if fit_type=='poly':
+           try:
+               fitt=np.polyfit(cont_x_good,cont_y_good,deg)
+           except:
+               print 'fitting gone wrong'
+               return(False)
+           if np.isnan(fitt).any():
+               print 'fitting gone wrong!'
+               return(False)
+           fitt2=np.poly1d(fitt)
+           return(y/fitt2(x),fitt2,cont_x_good,cont_y_good)
+       if fit_type=='spline':
+           try:
+               fitt=UnivariateSpline(cont_x_good,cont_y_good,s=deg)
+           except:
+               print 'fitting gone wrong'
+               return(False)
+           return(y/fitt(x),fitt,cont_x_good,cont_y_good)
+       if fit_type=='cheb':
+           try:
+               fitt=np.polynomial.Chebyshev.fit(cont_x_good,cont_y_good,deg=deg)
+           except:
+               print 'fitting gone wrong'
+               return(False)
+           return(y/fitt(x),fitt,cont_x_good,cont_y_good)
+
+
 datas=[]#contains ctm normalized data
 ctm=[]
 ctmf2=[] #flag for *potential* ctm problems
@@ -517,30 +595,10 @@ for i in star_no:
    for j in ['1','2','3','4']:
        bad=False
        fname=rv_corrected+date+j+'.txt'
-       if fname.split('.')[-2].endswith('1'):
-           lscale= lscale1
-           fit_degree=int(fit_degree1)
-
-       if fname.split('.')[-2].endswith('2'):
-           lscale= lscale2
-           fit_degree=int(fit_degree2)
-
-       if fname.split('.')[-2].endswith('3'):
-           lscale= lscale3
-           fit_degree=int(fit_degree3)
-
-       if fname.split('.')[-2].endswith('4'):
-           lscale= lscale4          
-           fit_degree=int(fit_degree4)
-
        data1=np.loadtxt(fname,delimiter=',')
        flux=data1[:,1]
        raw_wave=data1[:,0]
-       if j!='4' and (data1[:,0][0]>lscale[0] or data1[:,0][-1]<lscale[-1]):
-       #if len(data1)<len(lscale):
-           bad=True
-           print 'ccd%s, star wl within the model wl, skipped'%j
-           break
+       
        fit_y=[]
        fit_x=[]
        for ss in range(len(raw_wave)):
@@ -548,28 +606,44 @@ for i in star_no:
              if raw_wave[ss]< kk[1] and raw_wave[ss]> kk[0]:
                  fit_y.append(flux[ss])
                  fit_x.append(raw_wave[ss])
-
-       good_cont=np.where(np.abs(fit_y-np.mean(flux))<=np.mean(flux)*0.5)
-       fit_y=np.asfarray(fit_y)
-       fit_x=np.asfarray(fit_x)
-       fit_y=fit_y[good_cont]
-       fit_x=fit_x[good_cont]
-       flux_int=np.interp(lscale,raw_wave,flux)
-
-       try:
-           fitt=np.polyfit(fit_x,fit_y,fit_degree)
-       except:
-           print 'fitting gone wrong!'
-           bad=True
-           break
-       if np.isnan(fitt).any():
-           print 'fitting gone wrong!'
-           bad=True
-           break
+       flux_raw=np.genfromtxt(fname,delimiter=',')[:,1]
        
-       fitt2=np.poly1d(fitt)
-       flux_raw_norm=flux/fitt2(raw_wave)
-       flux_norm=flux_int/fitt2(lscale)
+       if fname.split('.')[-2].endswith('1'):
+           lscale= lscale1
+           flux_raw_norm,fit_func,fit_x_good,fit_y_good=fit(fit_x,fit_y,raw_wave,flux_raw,fit_degree1,3,ccd=1,fit_type='cheb')
+           if flux_raw_norm[0]==False:
+               bad=True
+               break
+           
+       if fname.split('.')[-2].endswith('2'):
+           lscale= lscale2
+           flux_raw_norm,fit_func,fit_x_good,fit_y_good=fit(fit_x,fit_y,raw_wave,flux_raw,fit_degree2,3,ccd=2,fit_type='cheb')
+           if flux_raw_norm[0]==False:
+               bad=True
+               break
+
+       if fname.split('.')[-2].endswith('3'):
+           flux_raw_norm,fit_func,fit_x_good,fit_y_good=fit(fit_x,fit_y,raw_wave,flux_raw,fit_degree3,2.7,ccd=3,fit_type='cheb')
+           lscale= lscale3
+           if flux_raw_norm[0]==False:
+               bad=True
+               break
+           
+       if fname.split('.')[-2].endswith('4'):
+           lscale= lscale4          
+           flux_raw_norm,fit_func,fit_x_good,fit_y_good=fit(fit_x,fit_y,raw_wave,flux_raw,fit_degree4,2.4,ccd=4,fit_type='cheb')
+           if flux_raw_norm[0]==False:
+               bad=True
+               break
+
+       if j!='4' and (data1[:,0][0]>lscale[0] or data1[:,0][-1]<lscale[-1]):
+       #if len(data1)<len(lscale):
+           bad=True
+           print 'ccd%s, star wl within the model wl, skipped'%j
+           break
+
+       flux_int=np.interp(lscale,raw_wave,flux)
+       flux_norm=flux_int/fit_func(lscale)
        
        outs=np.where(flux_raw_norm>1.05)[0]
        if len(outs)>150 and j!='4':
