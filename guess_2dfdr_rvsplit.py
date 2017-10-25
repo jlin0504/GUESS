@@ -10,8 +10,9 @@ last updated: 25-10-17
 @author: Jane Lin (u5027368@anu.edu.au)
 
 *The RV portion of GUESS, splits CCDs 2 and 3 into 4 parts and calculates RV for each segment, used for testing wavelength calibration issues
-*If the cross correlation fails, returns 999
-*Also returns the sigma of the segments (999 values excluded)
+*If the cross correlation fails, returns np.nan
+*Also returns the sigma of the segments
+*Values are now 3 dp 
 
 
 """
@@ -332,7 +333,7 @@ def find_rv2 (filename,ccd): #ccd=2 or 3 only!
     combined_rv4=sum(weights4*good_rv4)
     combined_rv=sum(weights*good_rv)
     combined_rvs=[combined_rv1,combined_rv2,combined_rv3,combined_rv4]
-    combined_rvs=[999 if x==0 else x for x in combined_rvs]
+    combined_rvs=[np.nan if x==0 else x for x in combined_rvs]
     
     return( combined_rvs[0], combined_rvs[1],combined_rvs[2],combined_rvs[3],combined_rv )
 
@@ -364,7 +365,7 @@ def run_rv (filename,folder):
 
     if snr1<3:
         print 'yooo dwag sn are looowwwwww'
-        return 999,snrs,1,999
+        return np.nan,snrs,1,np.nan
 
     for i in ['1','2','3']: #looping thru the ccds
         filename='%s/%s/combined/%s%s.fits'%(dir_str,folder,starno,i)
@@ -421,12 +422,12 @@ def run_rv (filename,folder):
         #final rv for this ccd is the weighted sum of rvs from ~15 models, weighted by ccoeff
         print 'weighted rv ccd'+i, sum(weights*good_rv)
         if sum(weights*good_rv) ==0 and i=='2': #incase the cc is crap
-            rvss.append(999)
+            rvss.append(np.nan)
             continue
         if sum(weights*good_rv) ==0 and (i=='1' or i=='3'):
             print 'ohh bad weights'
             bad_weights.append(starno)
-            return 999,snrs,999,1
+            return np.nan,snrs,np.nan,1
             break
         rvss.append(sum(weights*good_rv))
     
@@ -436,17 +437,26 @@ def run_rv (filename,folder):
 def sorting1 (rvs): #rvs=[rv1,rv2,rv3]
     #this step excludes the outlier if it lies further than 2x the distance between the other two
     i=rvs
+    i=[999999 if np.isnan(x)==True else x for x in i]
+
     good_stars=[] #[ rvs, sorted rvs, final rv]
     max_id,min_id,mid_id=i.index(max(i)),i.index(min(i)),i.index(heapq.nlargest(2,i)[1])
     if abs(i[max_id]-i[mid_id])/abs(i[mid_id]-i[min_id])>2:
             good_stars.append([i,[i[mid_id],i[min_id]],np.mean([i[mid_id],i[min_id]])])
+            good_stars[0][0]=[np.nan if x==999999 else x for x in good_stars[0][0]]
+            good_stars[0][1]=[np.nan if x==999999 else x for x in good_stars[0][1]]
+
             #print i,np.mean([i[mid_id],i[min_id]])
             return good_stars   
     if abs(i[mid_id]-i[min_id])/abs(i[max_id]-i[mid_id])>2:
             #print i, np.mean([i[mid_id],i[max_id]])
             good_stars.append([i,[i[mid_id],i[max_id]],np.mean([i[mid_id],i[max_id]])])
+            good_stars[0][1]=[np.nan if x==999999 else x for x in good_stars[0][1]]
+            good_stars[0][1]=[np.nan if x==999999 else x for x in good_stars[0][1]]
             return good_stars   
     good_stars.append([i,i,np.mean(i)])
+    good_stars[0][0]=[np.nan if x==999999 else x for x in good_stars[0][0]]
+    good_stars[0][1]=[np.nan if x==999999 else x for x in good_stars[0][1]]
     #print i,np.mean(i) 
     return good_stars     
 
@@ -470,36 +480,36 @@ for i in files:
     rv2=find_rv2(i,2)
     rv3=find_rv2(i,3)
 
-    rv2_std=np.std(np.array(rv2[:-1])[np.where(np.array(rv2[:-1])!=999)])
-    rv3_std=np.std(np.array(rv3[:-1])[np.where(np.array(rv3[:-1])!=999)])
+    rv2_std=np.std(np.array(rv2[:-1])[np.where(np.isnan(np.array(rv2[:-1]))==False)])
+    rv3_std=np.std(np.array(rv3[:-1])[np.where(np.isnan(np.array(rv3[:-1]))==False)])
 
     if rv[-1]==0:
-        if rv[0][1]!=999 and rv2[4]!=0:
+        if np.isnan(rv[0][1])!=True and rv2[4]!=0:
             assert rv[0][1]==rv2[4]
             print 'ok'
-        elif rv[0][2]!=999 and rv3[4]!=0:
+        elif np.isnan(rv[0][2])!=True and rv3[4]!=0:
             assert rv[0][2]==rv3[4]
             print 'ok'
     star_id=i.split('/')[-1].split('.')[0]
     if rv[2]==1:#snr low
         f.write('{0:<25} {1:<10.3f} {2:<10.3f} {3:<10.3f} {4:<10.3f} {5:<10.3f} {6:<10.3f} {7:<10.3f} {8:<10.3f} {9:<10.3f} {10:<10} {11:<10} {12:<10.3f} {13:<10.3f}  {14:<10.3f}  {15:<10.3f} {16:<10.3f} {17:<10.3f} {18:<10.3f} {19:<10.3f} {20:<10.3f} {21:<10.3f}\n'.\
-    format(star_id,999,999,999,999,999,rv[1][0],rv[1][1],rv[1][2],rv[1][3],1,0,rv2[0],rv2[1],rv2[2],rv2[3],rv3[0],rv3[1],rv3[2],rv3[3],rv2_std,rv3_std))
+    format(star_id,np.nan,np.nan,np.nan,np.nan,np.nan,rv[1][0],rv[1][1],rv[1][2],rv[1][3],1,0,rv2[0],rv2[1],rv2[2],rv2[3],rv3[0],rv3[1],rv3[2],rv3[3],rv2_std,rv3_std))
         continue
     if rv[3]==1:
         f.write('{0:<25} {1:<10.3f} {2:<10.3f} {3:<10.3f} {4:<10.3f} {5:<10.3f} {6:<10.3f} {7:<10.3f} {8:<10.3f} {9:<10.3f} {10:<10} {11:<10} {12:<10.3f} {13:<10.3f}  {14:<10.3f}  {15:<10.3f} {16:<10.3f} {17:<10.3f} {18:<10.3f} {19:<10.3f} {20:<10.3f} {21:<10.3f}\n'.\
-    format(star_id,999,999,999,999,999,rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,1,rv2[0],rv2[1],rv2[2],rv2[3],rv3[0],rv3[1],rv3[2],rv3[3],rv2_std,rv3_std))
+    format(star_id,np.nan,np.nan,np.nan,np.nan,np.nan,rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,1,rv2[0],rv2[1],rv2[2],rv2[3],rv3[0],rv3[1],rv3[2],rv3[3],rv2_std,rv3_std))
         continue
       #bad_weights
-    if rv[0][1]==999 and rv[2]==0 and rv[3]==0:
+    if np.isnan(rv[0][1])==True and rv[2]==0 and rv[3]==0:
         good_star=sorting1(rv[0])
         f.write('{0:<25} {1:<10.3f} {2:<10.3f} {3:<10.3f} {4:<10.3f} {5:<10.3f} {6:<10.3f} {7:<10.3f} {8:<10.3f} {9:<10.3f} {10:<10} {11:<10} {12:<10.3f} {13:<10.3f}  {14:<10.3f}  {15:<10.3f} {16:<10.3f} {17:<10.3f} {18:<10.3f} {19:<10.3f} {20:<10.3f} {21:<10.3f}\n'.\
     format(star_id,good_star[0][0][0],good_star[0][0][1],good_star[0][0][2],\
-           good_star[0][2],np.std([good_star[0][0][0],good_star[0][0][-1]]),rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,0,rv2[0],rv2[1],rv2[2],rv2[3],rv3[0],rv3[1],rv3[2],rv3[3],rv2_std,rv3_std))
+           good_star[0][2],np.std([good_star[0][0][0],good_star[0][0][-1]]),rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,0,rv2[0],rv2[1],rv2[2],rv2[3],rv3[0],rv3[1],rv3[2],rv3[3],rv2_std,rv3_std)) ####change the std 
     else:
         good_star=sorting1(rv[0])
         f.write('{0:<25} {1:<10.3f} {2:<10.3f} {3:<10.3f} {4:<10.3f} {5:<10.3f} {6:<10.3f} {7:<10.3f} {8:<10.3f} {9:<10.3f} {10:<10} {11:<10} {12:<10.3f} {13:<10.3f}  {14:<10.3f}  {15:<10.3f} {16:<10.3f} {17:<10.3f} {18:<10.3f} {19:<10.3f} {20:<10.3f} {21:<10.3f}\n'.\
     format(star_id,good_star[0][0][0],good_star[0][0][1],good_star[0][0][2],\
-           good_star[0][2],np.std(good_star[0][0]),rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,0,rv2[0],rv2[1],rv2[2],rv2[3],rv3[0],rv3[1],rv3[2],rv3[3],rv2_std,rv3_std))
+           good_star[0][2],np.std(good_star[0][0]),rv[1][0],rv[1][1],rv[1][2],rv[1][3],0,0,rv2[0],rv2[1],rv2[2],rv2[3],rv3[0],rv3[1],rv3[2],rv3[3],rv2_std,rv3_std))  ####change the std 
     
 f.close() 
 
